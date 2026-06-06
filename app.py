@@ -93,7 +93,7 @@ def login():
 
     session["user_id"]   = user["id"]
     session["user_name"] = user["name"]
-    return redirect(url_for("landing"))
+    return redirect(url_for("profile"))
 
 
 @app.route("/terms")
