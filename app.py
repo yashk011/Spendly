@@ -1,8 +1,8 @@
 import sqlite3
-from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db
+from database.queries import get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
 
 app = Flask(__name__)
 # TODO: replace with os.environ["SECRET_KEY"] in production
@@ -121,47 +121,27 @@ def profile():
     if not session.get("user_id"):
         return redirect(url_for("login"))
 
-    db = get_db()
-
-    user = db.execute(
-        "SELECT id, name, email, created_at FROM users WHERE id = ?",
-        (session["user_id"],)
-    ).fetchone()
+    user = get_user_by_id(session["user_id"])
 
     if user is None:
         session.clear()
-        db.close()
         return redirect(url_for("login"))
 
-    rows = db.execute(
-        "SELECT category, COUNT(*) as count, SUM(amount) as total "
-        "FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-        (session["user_id"],)
-    ).fetchall()
-    db.close()
-
-    grand_total = sum(r["total"] for r in rows)
-    grand_count = sum(r["count"] for r in rows)
-    top_category = rows[0]["category"] if rows else "—"
-
-    categories = [
-        {"name": r["category"], "count": r["count"], "total": f"₹{r['total']:,.2f}"}
-        for r in rows
-    ]
-
-    member_since = datetime.strptime(
-        user["created_at"], "%Y-%m-%d %H:%M:%S"
-    ).strftime("%B %Y")
+    stats = get_summary_stats(session["user_id"])
+    recent_transactions = get_recent_transactions(session["user_id"])
+    categories = get_category_breakdown(session["user_id"])
 
     return render_template("profile.html",
         user_name=user["name"],
         user_email=user["email"],
-        member_since=member_since,
-        grand_total=f"₹{grand_total:,.2f}",
-        grand_count=grand_count,
-        top_category=top_category,
+        member_since=user["member_since"],
+        grand_total=stats["total_spent"],
+        grand_count=stats["transaction_count"],
+        top_category=stats["top_category"],
+        recent_transactions=recent_transactions,
+        has_recent=bool(recent_transactions),
         categories=categories,
-        has_expenses=len(rows) > 0,
+        has_expenses=bool(categories),
     )
 
 
