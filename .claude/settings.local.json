@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(python -m pytest tests/test_backend_connection.py -v)",
+      "Bash(python -c ' *)"
     ]
   }
 }

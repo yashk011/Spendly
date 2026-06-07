@@ -88,6 +88,7 @@
                             <th>Category</th>
                             <th>Expenses</th>
                             <th>Total</th>
+                            <th>%</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -95,7 +96,8 @@
                         <tr>
                             <td>{{ cat.name }}</td>
                             <td>{{ cat.count }}</td>
-                            <td class="amount-cell">{{ cat.total }}</td>
+                            <td class="amount-cell">{{ cat.amount }}</td>
+                            <td>{{ cat.pct }}%</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -126,21 +128,19 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% if has_recent %}
+                      {% for txn in recent_transactions %}
+                      <tr>
+                        <td>{{ txn.date }}</td>
+                        <td><span class="cat-badge">{{ txn.category }}</span></td>
+                        <td class="amount-cell">{{ txn.amount }}</td>
+                      </tr>
+                      {% endfor %}
+                    {% else %}
                     <tr>
-                        <td>01 Jun 2026</td>
-                        <td><span class="cat-badge">Food</span></td>
-                        <td class="amount-cell">₹450.00</td>
+                      <td colspan="3" class="empty-cell">No transactions yet.</td>
                     </tr>
-                    <tr>
-                        <td>28 May 2026</td>
-                        <td><span class="cat-badge">Transport</span></td>
-                        <td class="amount-cell">₹120.00</td>
-                    </tr>
-                    <tr>
-                        <td>25 May 2026</td>
-                        <td><span class="cat-badge">Shopping</span></td>
-                        <td class="amount-cell">₹2,300.00</td>
-                    </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
