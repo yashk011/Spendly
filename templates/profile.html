@@ -18,6 +18,27 @@
             <span class="member-badge">Member since {{ member_since }}</span>
         </div>
 
+        <!-- Date Filter Bar -->
+        <div class="filter-bar">
+            <form class="filter-form" method="get" action="{{ url_for('profile') }}">
+                <div class="filter-fields">
+                    <label class="filter-label" for="date_from">From</label>
+                    <input class="filter-input" type="date" id="date_from" name="date_from" value="{{ date_from }}">
+                    <label class="filter-label" for="date_to">To</label>
+                    <input class="filter-input" type="date" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-apply" type="submit">Apply</button>
+                    <a class="filter-clear" href="{{ url_for('profile') }}">Clear</a>
+                </div>
+            </form>
+            {% if filter_active %}
+            <p class="filter-active-label">Filtered: {{ filter_label_from }} &rarr; {{ filter_label_to }}</p>
+            {% elif filter_error %}
+            <p class="filter-error-label">Invalid date range — showing all expenses.</p>
+            {% endif %}
+        </div>
+
         <!-- Stats Row -->
         <div class="stats-row">
             <div class="stat-card">
