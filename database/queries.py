@@ -22,13 +22,22 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_summary_stats(user_id):
+def _date_clause(date_from, date_to):
+    """Return (sql_fragment, extra_params) for an optional date BETWEEN filter."""
+    if date_from and date_to:
+        return " AND date BETWEEN ? AND ?", [date_from, date_to]
+    return "", []
+
+
+def get_summary_stats(user_id, date_from=None, date_to=None):
     """Return total spent, transaction count, and top spending category."""
     conn = get_db()
     try:
+        clause, dparams = _date_clause(date_from, date_to)
+
         row = conn.execute(
-            "SELECT SUM(amount), COUNT(*) FROM expenses WHERE user_id = ?",
-            (user_id,),
+            "SELECT SUM(amount), COUNT(*) FROM expenses WHERE user_id = ?" + clause,
+            [user_id] + dparams,
         ).fetchone()
 
         total_raw = row[0]
@@ -38,9 +47,9 @@ def get_summary_stats(user_id):
         transaction_count = count if count is not None else 0
 
         top_row = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ? "
-            "GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,),
+            "SELECT category FROM expenses WHERE user_id = ?" + clause +
+            " GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            [user_id] + dparams,
         ).fetchone()
         top_category = top_row[0] if top_row is not None else "—"
 
@@ -53,15 +62,17 @@ def get_summary_stats(user_id):
         conn.close()
 
 
-def get_recent_transactions(user_id, limit=10):
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     """Return the most recent expenses for a user, formatted for display."""
     conn = get_db()
     try:
+        clause, dparams = _date_clause(date_from, date_to)
+
         rows = conn.execute(
             "SELECT amount, category, date, description "
-            "FROM expenses WHERE user_id = ? "
-            "ORDER BY date DESC, id DESC LIMIT ?",
-            (user_id, limit),
+            "FROM expenses WHERE user_id = ?" + clause +
+            " ORDER BY date DESC, id DESC LIMIT ?",
+            [user_id] + dparams + [limit],
         ).fetchall()
 
         result = []
@@ -78,15 +89,17 @@ def get_recent_transactions(user_id, limit=10):
         conn.close()
 
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Return per-category totals and integer percentages that sum exactly to 100."""
     conn = get_db()
     try:
+        clause, dparams = _date_clause(date_from, date_to)
+
         rows = conn.execute(
             "SELECT category, COUNT(*) as cnt, SUM(amount) as total "
-            "FROM expenses WHERE user_id = ? "
-            "GROUP BY category ORDER BY total DESC",
-            (user_id,),
+            "FROM expenses WHERE user_id = ?" + clause +
+            " GROUP BY category ORDER BY total DESC",
+            [user_id] + dparams,
         ).fetchall()
 
         if not rows:

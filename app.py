@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db import get_db, init_db, seed_db
@@ -116,6 +117,23 @@ def logout():
     return redirect(url_for("login"))
 
 
+def _parse_date_filters(raw_from, raw_to):
+    """Return (date_from, date_to) as YYYY-MM-DD strings, or (None, None) if invalid/absent."""
+    try:
+        d_from = datetime.strptime(raw_from, "%Y-%m-%d").date()
+        d_to   = datetime.strptime(raw_to,   "%Y-%m-%d").date()
+    except ValueError:
+        return None, None
+    if d_from > d_to:
+        return None, None
+    return raw_from, raw_to
+
+
+def _fmt_date(date_str):
+    """Format a YYYY-MM-DD string as 'DD Mon YYYY' for display."""
+    return datetime.strptime(date_str, "%Y-%m-%d").strftime("%d %b %Y")
+
+
 @app.route("/profile")
 def profile():
     if not session.get("user_id"):
@@ -127,9 +145,17 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
-    stats = get_summary_stats(session["user_id"])
-    recent_transactions = get_recent_transactions(session["user_id"])
-    categories = get_category_breakdown(session["user_id"])
+    raw_from = request.args.get("date_from", "").strip()
+    raw_to   = request.args.get("date_to",   "").strip()
+    date_from, date_to = _parse_date_filters(raw_from, raw_to)
+
+    any_input   = bool(raw_from or raw_to)
+    filter_active = bool(date_from and date_to)
+    filter_error  = any_input and not filter_active
+
+    stats = get_summary_stats(session["user_id"], date_from=date_from, date_to=date_to)
+    recent_transactions = get_recent_transactions(session["user_id"], date_from=date_from, date_to=date_to)
+    categories = get_category_breakdown(session["user_id"], date_from=date_from, date_to=date_to)
 
     return render_template("profile.html",
         user_name=user["name"],
@@ -142,6 +168,12 @@ def profile():
         has_recent=bool(recent_transactions),
         categories=categories,
         has_expenses=bool(categories),
+        date_from=date_from or "",
+        date_to=date_to or "",
+        filter_active=filter_active,
+        filter_error=filter_error,
+        filter_label_from=_fmt_date(date_from) if date_from else "",
+        filter_label_to=_fmt_date(date_to)   if date_to   else "",
     )
 
 
