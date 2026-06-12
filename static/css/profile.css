@@ -317,6 +317,27 @@ th:last-child {
     align-self: flex-start;
 }
 
+/* Add Expense Banner */
+
+.added-banner {
+    background: var(--accent-light);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Profile header actions */
+
+.profile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
 /* Responsive */
 
 @media (max-width: 600px) {

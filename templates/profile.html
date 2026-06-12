@@ -15,8 +15,15 @@
                 <h1 class="profile-title">{{ user_name }}</h1>
                 <p class="profile-subtitle">{{ user_email }}</p>
             </div>
-            <span class="member-badge">Member since {{ member_since }}</span>
+            <div class="profile-header-actions">
+                <a href="{{ url_for('add_expense') }}" class="btn-primary">+ Add Expense</a>
+                <span class="member-badge">Member since {{ member_since }}</span>
+            </div>
         </div>
+
+        {% if request.args.get('added') %}
+        <div class="added-banner">Expense added successfully.</div>
+        {% endif %}
 
         <!-- Date Filter Bar -->
         <div class="filter-bar">
