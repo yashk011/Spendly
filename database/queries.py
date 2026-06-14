@@ -69,7 +69,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         clause, dparams = _date_clause(date_from, date_to)
 
         rows = conn.execute(
-            "SELECT amount, category, date, description "
+            "SELECT id, amount, category, date, description "
             "FROM expenses WHERE user_id = ?" + clause +
             " ORDER BY date DESC, id DESC LIMIT ?",
             [user_id] + dparams + [limit],
@@ -79,6 +79,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
         for r in rows:
             formatted_date = datetime.strptime(r["date"], "%Y-%m-%d").strftime("%d %b %Y")
             result.append({
+                "id": r["id"],
                 "date": formatted_date,
                 "category": r["category"],
                 "amount": "₹{:,.2f}".format(r["amount"]),
@@ -133,5 +134,19 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
             {"name": item["name"], "count": item["count"], "amount": item["amount"], "pct": item["pct"]}
             for item in items
         ]
+    finally:
+        conn.close()
+
+
+def get_expense_by_id(expense_id, user_id):
+    """Return a single expense row for editing, or None if not found / not owned by user."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, amount, category, date, description FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+        return dict(row) if row else None
     finally:
         conn.close()
